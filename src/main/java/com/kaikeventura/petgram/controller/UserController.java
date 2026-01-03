@@ -1,5 +1,6 @@
 package com.kaikeventura.petgram.controller;
 
+import com.kaikeventura.petgram.dto.PasswordUpdateRequest;
 import com.kaikeventura.petgram.dto.PostResponse;
 import com.kaikeventura.petgram.dto.PetResponse;
 import com.kaikeventura.petgram.dto.UserProfileResponse;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,6 +39,18 @@ public class UserController {
     @PutMapping("/me")
     public ResponseEntity<UserProfileResponse> updateCurrentUser(@Valid @RequestBody UserUpdateRequest userUpdateRequest) {
         return ResponseEntity.ok(userService.updateCurrentUser(userUpdateRequest));
+    }
+
+    @PutMapping("/me/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateCurrentUserPassword(@Valid @RequestBody PasswordUpdateRequest passwordUpdateRequest) {
+        userService.updateCurrentUserPassword(passwordUpdateRequest);
+    }
+
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCurrentUser() {
+        userService.deleteCurrentUser();
     }
 
     @GetMapping("/{userId}")
