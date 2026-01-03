@@ -2,6 +2,7 @@ package com.kaikeventura.petgram.controller;
 
 import com.kaikeventura.petgram.dto.ErrorResponse;
 import com.kaikeventura.petgram.dto.LoginRequest;
+import com.kaikeventura.petgram.dto.LoginResponse;
 import com.kaikeventura.petgram.dto.RegisterRequest;
 import com.kaikeventura.petgram.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,16 +40,15 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Authenticate a user", description = "Authenticates with email and password, returning a JWT in the Authorization header.")
+    @Operation(summary = "Authenticate a user", description = "Authenticates with email and password, returning a JWT in the response body.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Authentication successful, JWT returned in Authorization header"),
+            @ApiResponse(responseCode = "200", description = "Authentication successful", content = @Content(schema = @Schema(implementation = LoginResponse.class))),
             @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         var token = authService.login(request);
-        var headers = new HttpHeaders();
-        headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        return ResponseEntity.ok().headers(headers).build();
+        var response = new LoginResponse(token);
+        return ResponseEntity.ok(response);
     }
 }
