@@ -47,6 +47,21 @@ public class UserService {
         return userProfileMapper.toUserProfileResponse(updatedUser);
     }
 
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfile(UUID userId) {
+        return userRepository.findById(userId)
+                .map(userProfileMapper::toUserProfileResponse)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getUserPosts(UUID userId, Pageable pageable) {
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+        return postRepository.findByAuthorOrderByCreatedAtDesc(user, pageable)
+                .map(postMapper::toPostResponse);
+    }
+
     private User getCurrentUser() {
         var principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var userId = UUID.fromString(principal.getUsername());

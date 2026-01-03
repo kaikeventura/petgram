@@ -107,6 +107,15 @@ public class PetService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<PetResponse> findPetsByOwner(UUID userId) {
+        var owner = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+        return petRepository.findByOwner(owner).stream()
+                .map(petMapper::toPetResponse)
+                .collect(Collectors.toList());
+    }
+
     private User getCurrentUser() {
         var principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var userId = UUID.fromString(principal.getUsername());

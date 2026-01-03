@@ -6,6 +6,7 @@ import com.kaikeventura.petgram.domain.Pet;
 import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import com.kaikeventura.petgram.dto.FriendshipRequestResponse;
+import com.kaikeventura.petgram.dto.FriendshipStatusResponse;
 import com.kaikeventura.petgram.repository.FriendshipRepository;
 import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
@@ -106,6 +107,14 @@ public class FriendshipService {
         var friendship = findFriendship(petId1, petId2);
         friendship.setStatus(FriendshipStatus.BLOCKED);
         friendshipRepository.save(friendship);
+    }
+
+    @Transactional(readOnly = true)
+    public FriendshipStatusResponse getFriendshipStatus(UUID petId1, UUID petId2) {
+        var status = friendshipRepository.findFriendshipBetweenPets(petId1, petId2)
+                .map(Friendship::getStatus)
+                .orElse(null); // Will be serialized as null, frontend can interpret as "NONE"
+        return new FriendshipStatusResponse(status);
     }
 
     private void validateOwnershipForAction(UUID petId1, UUID petId2) {
