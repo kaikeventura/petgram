@@ -7,10 +7,13 @@ import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import com.kaikeventura.petgram.dto.FriendshipRequestResponse;
 import com.kaikeventura.petgram.dto.FriendshipStatusResponse;
+import com.kaikeventura.petgram.event.FriendshipAcceptedEvent;
+import com.kaikeventura.petgram.event.FriendshipRequestedEvent;
 import com.kaikeventura.petgram.repository.FriendshipRepository;
 import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +29,7 @@ public class FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
     private final PetRepository petRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void sendFriendRequest(UUID requesterPetId, UUID addresseePetId) {
@@ -50,7 +54,8 @@ public class FriendshipService {
         var friendshipId = new FriendshipId(requesterPetId, addresseePetId);
         var friendship = new Friendship(friendshipId, requesterPet, addresseePet, FriendshipStatus.PENDING);
 
-        friendshipRepository.save(friendship);
+        var savedFriendship = friendshipRepository.save(friendship);
+        eventPublisher.publishEvent(new FriendshipRequestedEvent(this, savedFriendship));
     }
 
     @Transactional
@@ -73,7 +78,8 @@ public class FriendshipService {
         }
 
         friendship.setStatus(FriendshipStatus.ACCEPTED);
-        friendshipRepository.save(friendship);
+        var savedFriendship = friendshipRepository.save(friendship);
+        eventPublisher.publishEvent(new FriendshipAcceptedEvent(this, savedFriendship));
     }
 
     @Transactional(readOnly = true)
@@ -113,7 +119,7 @@ public class FriendshipService {
     public FriendshipStatusResponse getFriendshipStatus(UUID petId1, UUID petId2) {
         var status = friendshipRepository.findFriendshipBetweenPets(petId1, petId2)
                 .map(Friendship::getStatus)
-                .orElse(null); // Will be serialized as null, frontend can interpret as "NONE"
+                .orElse(null);
         return new FriendshipStatusResponse(status);
     }
 

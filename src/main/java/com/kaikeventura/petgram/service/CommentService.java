@@ -4,11 +4,13 @@ import com.kaikeventura.petgram.domain.Comment;
 import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.dto.CommentRequest;
 import com.kaikeventura.petgram.dto.CommentResponse;
+import com.kaikeventura.petgram.event.PostCommentedEvent;
 import com.kaikeventura.petgram.repository.CommentRepository;
 import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.CommentMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ public class CommentService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CommentMapper commentMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public CommentResponse createComment(UUID postId, CommentRequest commentRequest) {
@@ -31,14 +34,19 @@ public class CommentService {
                 .orElseThrow(() -> new IllegalArgumentException("Post not found."));
 
         var comment = new Comment(
-                null, // ID will be generated
+                null,
                 commentRequest.text(),
                 user,
                 post,
-                null // createdAt will be generated
+                null
         );
 
         var savedComment = commentRepository.save(comment);
+
+        if (!post.getAuthor().equals(user)) {
+            eventPublisher.publishEvent(new PostCommentedEvent(this, savedComment));
+        }
+
         return commentMapper.toCommentResponse(savedComment);
     }
 
@@ -48,7 +56,6 @@ public class CommentService {
         var comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found."));
 
-        // Authorization check: User must be the author of the comment OR the author of the post
         boolean isCommentAuthor = comment.getUser().equals(user);
         boolean isPostAuthor = comment.getPost().getAuthor().equals(user);
 
