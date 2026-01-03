@@ -11,6 +11,8 @@ import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.CommentMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +66,14 @@ public class CommentService {
         }
 
         commentRepository.delete(comment);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CommentResponse> getCommentsForPost(UUID postId, Pageable pageable) {
+        var post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found."));
+        return commentRepository.findByPostOrderByCreatedAtDesc(post, pageable)
+                .map(commentMapper::toCommentResponse);
     }
 
     private User getCurrentUser() {

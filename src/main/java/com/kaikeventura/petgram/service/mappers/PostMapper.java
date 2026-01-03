@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 public interface PostMapper {
 
     @Mapping(target = "likeCount", expression = "java(post.getLikes() != null ? post.getLikes().size() : 0)")
+    @Mapping(target = "commentCount", expression = "java(post.getComments() != null ? post.getComments().size() : 0)")
     @Mapping(source = "author", target = "author")
-    @Mapping(source = "comments", target = "comments")
     PostResponse toPostResponse(Post post);
 }

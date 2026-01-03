@@ -1,7 +1,6 @@
 package com.kaikeventura.petgram.dto;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 public record PostResponse(
@@ -10,7 +9,7 @@ public record PostResponse(
         String caption,
         AuthorResponse author,
         long likeCount,
-        List<CommentResponse> comments,
+        long commentCount, // Changed from List<CommentResponse>
         LocalDateTime createdAt
 ) {
 }

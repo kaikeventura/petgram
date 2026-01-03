@@ -3,12 +3,15 @@ package com.kaikeventura.petgram.service;
 import com.kaikeventura.petgram.domain.Like;
 import com.kaikeventura.petgram.domain.LikeId;
 import com.kaikeventura.petgram.domain.User;
+import com.kaikeventura.petgram.dto.LikeResponse;
 import com.kaikeventura.petgram.event.PostLikedEvent;
 import com.kaikeventura.petgram.repository.LikeRepository;
 import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +58,14 @@ public class LikeService {
         }
 
         likeRepository.deleteById(likeId);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<LikeResponse> getLikesForPost(UUID postId, Pageable pageable) {
+        var post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found."));
+        return likeRepository.findByPost(post, pageable)
+                .map(like -> new LikeResponse(like.getUser().getId(), like.getUser().getName()));
     }
 
     private User getCurrentUser() {

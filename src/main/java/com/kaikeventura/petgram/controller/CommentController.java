@@ -5,6 +5,8 @@ import com.kaikeventura.petgram.dto.CommentResponse;
 import com.kaikeventura.petgram.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,5 +32,13 @@ public class CommentController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteComment(@PathVariable UUID commentId) {
         commentService.deleteComment(commentId);
+    }
+
+    @GetMapping("/posts/{postId}/comments")
+    public ResponseEntity<Page<CommentResponse>> getCommentsForPost(
+            @PathVariable UUID postId,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(commentService.getCommentsForPost(postId, pageable));
     }
 }
