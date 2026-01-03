@@ -19,7 +19,7 @@
         <jjwt.version>0.11.5</jjwt.version>
         <aws.java.sdk.version>2.20.43</aws.java.sdk.version>
         <uuid-creator.version>5.3.7</uuid-creator.version>
-        <springdoc.version>2.5.0</springdoc.version>
+        <springdoc.version>2.7.0</springdoc.version>
     </properties>
 
     <dependencyManagement>

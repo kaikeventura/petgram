@@ -1,9 +1,12 @@
 package com.kaikeventura.petgram.controller;
 
+import com.kaikeventura.petgram.dto.ErrorResponse;
 import com.kaikeventura.petgram.dto.LoginRequest;
 import com.kaikeventura.petgram.dto.RegisterRequest;
 import com.kaikeventura.petgram.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,7 +31,8 @@ public class AuthController {
     @Operation(summary = "Register a new user", description = "Creates a new user account. The email must be unique.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "User registered successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data or email already in use")
+            @ApiResponse(responseCode = "400", description = "Invalid input data (validation error)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "Conflict, email already in use", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/register")
     public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
@@ -39,7 +43,7 @@ public class AuthController {
     @Operation(summary = "Authenticate a user", description = "Authenticates with email and password, returning a JWT in the Authorization header.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Authentication successful, JWT returned in Authorization header"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/login")
     public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request) {

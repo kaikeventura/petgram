@@ -3,6 +3,7 @@ package com.kaikeventura.petgram.controller;
 import com.kaikeventura.petgram.dto.NotificationResponse;
 import com.kaikeventura.petgram.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +23,14 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @Operation(summary = "Get unread notifications", description = "Fetches a list of all unread notifications for the currently authenticated user.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved notifications")
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getUnreadNotifications() {
         return ResponseEntity.ok(notificationService.getUnreadNotifications());
     }
 
     @Operation(summary = "Mark all notifications as read", description = "Marks all unread notifications for the current user as read.")
+    @ApiResponse(responseCode = "204", description = "Notifications marked as read")
     @PostMapping("/mark-as-read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void markAllAsRead() {
