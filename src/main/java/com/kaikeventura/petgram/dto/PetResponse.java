@@ -19,6 +19,9 @@ public record PetResponse(
         @Schema(description = "The pet's birth date.")
         LocalDate birthDate,
 
+        @Schema(description = "The public URL for the pet's avatar image.", nullable = true)
+        String avatarUrl,
+
         @Schema(description = "The unique identifier of the pet's owner.")
         UUID ownerId
 ) {

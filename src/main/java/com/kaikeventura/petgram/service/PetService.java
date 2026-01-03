@@ -35,14 +35,14 @@ public class PetService {
     public PetResponse createPet(PetRequest petRequest) {
         var owner = getCurrentUser();
         var pet = new Pet(
-                null,
+                null, // ID
                 petRequest.name(),
                 petRequest.breed(),
                 petRequest.birthDate(),
                 null, // avatarUrl
                 owner,
-                null,
-                null
+                null, // createdAt
+                null  // updatedAt
         );
 
         var savedPet = petRepository.save(pet);
@@ -128,11 +128,12 @@ public class PetService {
             throw new SecurityException("You are not the owner of this pet.");
         }
 
-        var avatarUrl = storageService.uploadFile(file);
-        pet.setAvatarUrl(avatarUrl);
+        var avatarKey = storageService.uploadFile(file);
+        pet.setAvatarUrl(avatarKey);
         petRepository.save(pet);
 
-        return avatarUrl;
+        // Generate a presigned URL for the immediate response
+        return petMapper.generatePresignedUrl(avatarKey);
     }
 
     private User getCurrentUser() {

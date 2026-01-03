@@ -13,6 +13,9 @@ public record PetSearchResponse(
         String name,
 
         @Schema(description = "The breed of the pet.")
-        String breed
+        String breed,
+
+        @Schema(description = "The public URL for the pet's avatar image.", nullable = true)
+        String avatarUrl
 ) {
 }
