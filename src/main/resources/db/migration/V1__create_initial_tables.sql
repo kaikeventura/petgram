@@ -30,12 +30,12 @@ CREATE TABLE pets (
 
 -- Table: friendships
 CREATE TABLE friendships (
-    requester_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    addressee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    requester_pet_id UUID NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+    addressee_pet_id UUID NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
     status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (requester_id, addressee_id)
+    PRIMARY KEY (requester_pet_id, addressee_pet_id)
 );
 
 -- Table: posts

@@ -22,14 +22,14 @@ public class Friendship implements Serializable {
     private FriendshipId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("requesterId")
-    @JoinColumn(name = "requester_id")
-    private User requester;
+    @MapsId("requesterPetId")
+    @JoinColumn(name = "requester_pet_id")
+    private Pet requesterPet;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("addresseeId")
-    @JoinColumn(name = "addressee_id")
-    private User addressee;
+    @MapsId("addresseePetId")
+    @JoinColumn(name = "addressee_pet_id")
+    private Pet addresseePet;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -43,10 +43,10 @@ public class Friendship implements Serializable {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Friendship(FriendshipId id, User requester, User addressee, FriendshipStatus status) {
+    public Friendship(FriendshipId id, Pet requesterPet, Pet addresseePet, FriendshipStatus status) {
         this.id = id;
-        this.requester = requester;
-        this.addressee = addressee;
+        this.requesterPet = requesterPet;
+        this.addresseePet = addresseePet;
         this.status = status;
     }
 }

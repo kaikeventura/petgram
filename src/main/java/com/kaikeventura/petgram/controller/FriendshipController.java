@@ -1,7 +1,9 @@
 package com.kaikeventura.petgram.controller;
 
+import com.kaikeventura.petgram.dto.FriendshipActionRequest;
 import com.kaikeventura.petgram.dto.FriendshipRequestResponse;
 import com.kaikeventura.petgram.service.FriendshipService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,20 +18,21 @@ public class FriendshipController {
 
     private final FriendshipService friendshipService;
 
-    @PostMapping("/request/{addresseeId}")
-    public ResponseEntity<Void> sendFriendRequest(@PathVariable UUID addresseeId) {
-        friendshipService.sendFriendRequest(addresseeId);
+    @PostMapping("/request")
+    public ResponseEntity<Void> sendFriendRequest(@Valid @RequestBody FriendshipActionRequest request) {
+        friendshipService.sendFriendRequest(request.requesterPetId(), request.addresseePetId());
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/accept/{requesterId}")
-    public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID requesterId) {
-        friendshipService.acceptFriendRequest(requesterId);
+    @PostMapping("/accept")
+    public ResponseEntity<Void> acceptFriendRequest(@Valid @RequestBody FriendshipActionRequest request) {
+        // For accepting, the addressee is the one taking action.
+        friendshipService.acceptFriendRequest(request.addresseePetId(), request.requesterPetId());
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/requests/pending")
-    public ResponseEntity<List<FriendshipRequestResponse>> getPendingRequests() {
-        return ResponseEntity.ok(friendshipService.getPendingRequests());
+    @GetMapping("/requests/pending/{petId}")
+    public ResponseEntity<List<FriendshipRequestResponse>> getPendingRequests(@PathVariable UUID petId) {
+        return ResponseEntity.ok(friendshipService.getPendingRequestsForPet(petId));
     }
 }

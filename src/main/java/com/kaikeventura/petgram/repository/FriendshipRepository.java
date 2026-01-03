@@ -2,7 +2,7 @@ package com.kaikeventura.petgram.repository;
 
 import com.kaikeventura.petgram.domain.Friendship;
 import com.kaikeventura.petgram.domain.FriendshipId;
-import com.kaikeventura.petgram.domain.User;
+import com.kaikeventura.petgram.domain.Pet;
 import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,18 +16,12 @@ import java.util.UUID;
 @Repository
 public interface FriendshipRepository extends JpaRepository<Friendship, FriendshipId> {
 
-    @Query("SELECT f.addressee FROM Friendship f WHERE f.requester = :user AND f.status = :status")
-    List<User> findFriendsByRequesterAndStatus(@Param("user") User user, @Param("status") FriendshipStatus status);
-
-    @Query("SELECT f.requester FROM Friendship f WHERE f.addressee = :user AND f.status = :status")
-    List<User> findFriendsByAddresseeAndStatus(@Param("user") User user, @Param("status") FriendshipStatus status);
-
     @Query("""
         SELECT f FROM Friendship f
-        WHERE (f.requester.id = :userId1 AND f.addressee.id = :userId2)
-           OR (f.requester.id = :userId2 AND f.addressee.id = :userId1)
+        WHERE (f.requesterPet.id = :petId1 AND f.addresseePet.id = :petId2)
+           OR (f.requesterPet.id = :petId2 AND f.addresseePet.id = :petId1)
     """)
-    Optional<Friendship> findFriendshipBetweenUsers(@Param("userId1") UUID userId1, @Param("userId2") UUID userId2);
+    Optional<Friendship> findFriendshipBetweenPets(@Param("petId1") UUID petId1, @Param("petId2") UUID petId2);
 
-    List<Friendship> findByAddresseeAndStatus(User addressee, FriendshipStatus status);
+    List<Friendship> findByAddresseePetAndStatus(Pet addresseePet, FriendshipStatus status);
 }

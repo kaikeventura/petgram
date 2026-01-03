@@ -14,33 +14,32 @@ import java.util.UUID;
 public interface PostRepository extends JpaRepository<Post, UUID> {
 
     /**
-     * Fetches the news feed for a given user.
-     * The feed includes posts from the user themselves and their accepted friends.
-     *
-     * The query works as follows:
-     * 1. It selects all posts 'p'.
-     * 2. The WHERE clause filters these posts based on the author.
-     * 3. 'p.author.id = :userId' includes the user's own posts.
-     * 4. The subquery identifies the user's friends:
-     *    - It looks in the Friendship table for relationships where the current user is either the requester or the addressee.
-     *    - It checks if the friendship status is 'ACCEPTED'.
-     *    - It returns the ID of the friend (either addressee or requester, depending on the side of the relationship).
-     * 5. 'p.author.id IN (...) combines both conditions, fetching posts from the user and their friends.
-     * 6. The results are ordered by creation date in descending order.
+     * Fetches the news feed for a given user, based on pet friendships.
+     * The feed includes posts from:
+     * 1. The user themselves.
+     * 2. The owners of pets that are friends with the user's own pets.
      */
     @Query(value = """
         SELECT p FROM Post p WHERE p.author.id = :userId OR p.author.id IN (
-            SELECT f.addressee.id FROM Friendship f WHERE f.requester.id = :userId AND f.status = 'ACCEPTED'
-            UNION
-            SELECT f.requester.id FROM Friendship f WHERE f.addressee.id = :userId AND f.status = 'ACCEPTED'
+            SELECT pet.owner.id FROM Pet pet WHERE pet.id IN (
+                SELECT f.addresseePet.id FROM Friendship f
+                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.requesterPet.owner.id = :userId
+                UNION
+                SELECT f.requesterPet.id FROM Friendship f
+                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.addresseePet.owner.id = :userId
+            )
         )
         ORDER BY p.createdAt DESC
     """,
     countQuery = """
         SELECT count(p) FROM Post p WHERE p.author.id = :userId OR p.author.id IN (
-            SELECT f.addressee.id FROM Friendship f WHERE f.requester.id = :userId AND f.status = 'ACCEPTED'
-            UNION
-            SELECT f.requester.id FROM Friendship f WHERE f.addressee.id = :userId AND f.status = 'ACCEPTED'
+            SELECT DISTINCT pet.owner.id FROM Pet pet WHERE pet.id IN (
+                SELECT f.addresseePet.id FROM Friendship f
+                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.requesterPet.owner.id = :userId
+                UNION
+                SELECT f.requesterPet.id FROM Friendship f
+                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.addresseePet.owner.id = :userId
+            )
         )
     """)
     Page<Post> findNewsFeedForUser(@Param("userId") UUID userId, Pageable pageable);

@@ -14,9 +14,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class FriendshipId implements Serializable {
-    @Column(name = "requester_id")
-    private UUID requesterId;
+    @Column(name = "requester_pet_id")
+    private UUID requesterPetId;
 
-    @Column(name = "addressee_id")
-    private UUID addresseeId;
+    @Column(name = "addressee_pet_id")
+    private UUID addresseePetId;
 }

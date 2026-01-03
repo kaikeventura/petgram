@@ -2,10 +2,12 @@ package com.kaikeventura.petgram.service;
 
 import com.kaikeventura.petgram.domain.Friendship;
 import com.kaikeventura.petgram.domain.FriendshipId;
+import com.kaikeventura.petgram.domain.Pet;
 import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import com.kaikeventura.petgram.dto.FriendshipRequestResponse;
 import com.kaikeventura.petgram.repository.FriendshipRepository;
+import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,42 +24,55 @@ public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
+    private final PetRepository petRepository;
 
     @Transactional
-    public void sendFriendRequest(UUID addresseeId) {
-        var requester = getCurrentUser();
-        if (requester.getId().equals(addresseeId)) {
-            throw new IllegalArgumentException("You cannot send a friend request to yourself.");
+    public void sendFriendRequest(UUID requesterPetId, UUID addresseePetId) {
+        var currentUser = getCurrentUser();
+        var requesterPet = findPetById(requesterPetId);
+
+        // Validate that the current user owns the requester pet
+        if (!requesterPet.getOwner().equals(currentUser)) {
+            throw new SecurityException("You are not the owner of the pet sending the request.");
         }
 
-        var addressee = findUserById(addresseeId);
+        if (requesterPetId.equals(addresseePetId)) {
+            throw new IllegalArgumentException("A pet cannot send a friend request to itself.");
+        }
 
-        friendshipRepository.findFriendshipBetweenUsers(requester.getId(), addresseeId)
+        var addresseePet = findPetById(addresseePetId);
+
+        friendshipRepository.findFriendshipBetweenPets(requesterPetId, addresseePetId)
                 .ifPresent(friendship -> {
-                    throw new IllegalStateException("A friendship request already exists or has been established.");
+                    throw new IllegalStateException("A friendship request already exists or has been established between these pets.");
                 });
 
-        var friendshipId = new FriendshipId(requester.getId(), addresseeId);
-        var friendship = new Friendship(friendshipId, requester, addressee, FriendshipStatus.PENDING);
+        var friendshipId = new FriendshipId(requesterPetId, addresseePetId);
+        var friendship = new Friendship(friendshipId, requesterPet, addresseePet, FriendshipStatus.PENDING);
 
         friendshipRepository.save(friendship);
     }
 
     @Transactional
-    public void acceptFriendRequest(UUID requesterId) {
-        var addressee = getCurrentUser(); // The user accepting the request
-        var requester = findUserById(requesterId);
+    public void acceptFriendRequest(UUID addresseePetId, UUID requesterPetId) {
+        var currentUser = getCurrentUser();
+        var addresseePet = findPetById(addresseePetId);
 
-        var friendship = friendshipRepository.findFriendshipBetweenUsers(requesterId, addressee.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Friendship request not found."));
-
-        // Ensure the current user is the one who received the request
-        if (!friendship.getAddressee().equals(addressee)) {
-            throw new IllegalStateException("You are not authorized to accept this friend request.");
+        // Validate that the current user owns the pet accepting the request
+        if (!addresseePet.getOwner().equals(currentUser)) {
+            throw new SecurityException("You are not the owner of the pet accepting the request.");
         }
+
+        var friendship = friendshipRepository.findFriendshipBetweenPets(requesterPetId, addresseePetId)
+                .orElseThrow(() -> new IllegalArgumentException("Friendship request not found."));
 
         if (friendship.getStatus() != FriendshipStatus.PENDING) {
             throw new IllegalStateException("This friend request is not pending and cannot be accepted.");
+        }
+
+        // Ensure the correct pet is accepting the request
+        if (!friendship.getAddresseePet().equals(addresseePet)) {
+            throw new IllegalStateException("This pet is not the recipient of the friend request.");
         }
 
         friendship.setStatus(FriendshipStatus.ACCEPTED);
@@ -65,14 +80,19 @@ public class FriendshipService {
     }
 
     @Transactional(readOnly = true)
-    public List<FriendshipRequestResponse> getPendingRequests() {
+    public List<FriendshipRequestResponse> getPendingRequestsForPet(UUID petId) {
         var currentUser = getCurrentUser();
-        var pendingFriendships = friendshipRepository.findByAddresseeAndStatus(currentUser, FriendshipStatus.PENDING);
+        var pet = findPetById(petId);
 
-        return pendingFriendships.stream()
+        // Validate that the current user owns the pet
+        if (!pet.getOwner().equals(currentUser)) {
+            throw new SecurityException("You are not the owner of this pet.");
+        }
+
+        return friendshipRepository.findByAddresseePetAndStatus(pet, FriendshipStatus.PENDING).stream()
                 .map(friendship -> new FriendshipRequestResponse(
-                        friendship.getRequester().getId(),
-                        friendship.getRequester().getName(),
+                        friendship.getRequesterPet().getId(),
+                        friendship.getRequesterPet().getName(),
                         friendship.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
@@ -81,11 +101,11 @@ public class FriendshipService {
     private User getCurrentUser() {
         var principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var userId = UUID.fromString(principal.getUsername());
-        return findUserById(userId);
+        return userRepository.findById(userId).orElseThrow(() -> new IllegalStateException("User not found"));
     }
 
-    private User findUserById(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User with ID " + userId + " not found."));
+    private Pet findPetById(UUID petId) {
+        return petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet with ID " + petId + " not found."));
     }
 }
