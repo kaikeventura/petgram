@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: petgram-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=petgram
+    ports:
+      - "5432:5432"
+
+  minio:
+    image: minio/minio:latest
+    container_name: petgram-minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9000:9000" # API Port
+      - "9001:9001" # Console Port
+    # Este é o comando para INICIAR O SERVIDOR. Ele pertence apenas a este serviço.
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - petgram-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  create-minio-bucket:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    # Este entrypoint executa comandos do CLIENTE (mc).
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb local/petgram-bucket --ignore-existing;
+      /usr/bin/mc policy set public local/petgram-bucket;
+      echo 'Bucket petgram-bucket is ready.';
+      "
+    networks:
+      - petgram-network
+
+networks:
+  petgram-network:
+    driver: bridge
+
+volumes:
+  minio_data:
