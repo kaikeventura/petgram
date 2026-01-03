@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/pets")
@@ -27,5 +28,22 @@ public class PetController {
     @GetMapping
     public ResponseEntity<List<PetResponse>> findMyPets() {
         return ResponseEntity.ok(petService.findMyPets());
+    }
+
+    @GetMapping("/{petId}")
+    public ResponseEntity<PetResponse> findPetById(@PathVariable UUID petId) {
+        return ResponseEntity.ok(petService.findPetById(petId));
+    }
+
+    @PutMapping("/{petId}")
+    public ResponseEntity<PetResponse> updatePet(@PathVariable UUID petId, @Valid @RequestBody PetRequest petRequest) {
+        var updatedPet = petService.updatePet(petId, petRequest);
+        return ResponseEntity.ok(updatedPet);
+    }
+
+    @DeleteMapping("/{petId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePet(@PathVariable UUID petId) {
+        petService.deletePet(petId);
     }
 }

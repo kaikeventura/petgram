@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/posts")
 @RequiredArgsConstructor
@@ -30,5 +32,10 @@ public class PostController {
     public ResponseEntity<Page<PostResponse>> getNewsFeed(Pageable pageable) {
         var feed = postService.getNewsFeed(pageable);
         return ResponseEntity.ok(feed);
+    }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponse> findPostById(@PathVariable UUID postId) {
+        return ResponseEntity.ok(postService.findPostById(postId));
     }
 }

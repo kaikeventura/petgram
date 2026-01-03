@@ -49,6 +49,44 @@ public class PetService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public PetResponse findPetById(UUID petId) {
+        return petRepository.findById(petId)
+                .map(petMapper::toPetResponse)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+    }
+
+    @Transactional
+    public PetResponse updatePet(UUID petId, PetRequest petRequest) {
+        var currentUser = getCurrentUser();
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().equals(currentUser)) {
+            throw new SecurityException("You are not the owner of this pet.");
+        }
+
+        pet.setName(petRequest.name());
+        pet.setBreed(petRequest.breed());
+        pet.setBirthDate(petRequest.birthDate());
+
+        var updatedPet = petRepository.save(pet);
+        return petMapper.toPetResponse(updatedPet);
+    }
+
+    @Transactional
+    public void deletePet(UUID petId) {
+        var currentUser = getCurrentUser();
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().equals(currentUser)) {
+            throw new SecurityException("You are not the owner of this pet.");
+        }
+
+        petRepository.delete(pet);
+    }
+
     private User getCurrentUser() {
         var principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var userId = UUID.fromString(principal.getUsername());

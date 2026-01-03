@@ -58,6 +58,13 @@ public class PostService {
         return posts.map(postMapper::toPostResponse);
     }
 
+    @Transactional(readOnly = true)
+    public PostResponse findPostById(UUID postId) {
+        return postRepository.findById(postId)
+                .map(postMapper::toPostResponse)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found."));
+    }
+
     private User getCurrentUser() {
         var principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var userId = UUID.fromString(principal.getUsername());
