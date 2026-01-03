@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,9 +23,10 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostResponse> createPost(
             @RequestParam("caption") String caption,
+            @RequestParam(value = "taggedPetIds", required = false) List<UUID> taggedPetIds,
             @RequestParam("file") MultipartFile file
     ) {
-        var post = postService.createPost(caption, file);
+        var post = postService.createPost(caption, taggedPetIds, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 

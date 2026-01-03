@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -50,5 +52,11 @@ public class PetController {
     @GetMapping("/{petId}/friends")
     public ResponseEntity<List<PetResponse>> listFriends(@PathVariable UUID petId) {
         return ResponseEntity.ok(petService.listFriends(petId));
+    }
+
+    @PostMapping("/{petId}/avatar")
+    public ResponseEntity<Map<String, String>> uploadPetAvatar(@PathVariable UUID petId, @RequestParam("file") MultipartFile file) {
+        var avatarUrl = petService.updatePetAvatar(petId, file);
+        return ResponseEntity.ok(Map.of("avatarUrl", avatarUrl));
     }
 }

@@ -1,8 +1,10 @@
 package com.kaikeventura.petgram.service;
 
+import com.kaikeventura.petgram.domain.Pet;
 import com.kaikeventura.petgram.domain.Post;
 import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.dto.PostResponse;
+import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.PostMapper;
@@ -16,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -24,20 +28,30 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final PetRepository petRepository;
     private final S3StorageService storageService;
     private final PostMapper postMapper;
 
     @Transactional
-    public PostResponse createPost(String caption, MultipartFile file) {
+    public PostResponse createPost(String caption, List<UUID> taggedPetIds, MultipartFile file) {
         var user = getCurrentUser();
         var photoUrl = storageService.uploadFile(file);
+
+        var taggedPets = new HashSet<Pet>();
+        if (taggedPetIds != null && !taggedPetIds.isEmpty()) {
+            taggedPets.addAll(petRepository.findAllById(taggedPetIds));
+            // Basic validation: ensure all provided IDs were found.
+            if (taggedPets.size() != taggedPetIds.size()) {
+                throw new IllegalArgumentException("One or more tagged pets were not found.");
+            }
+        }
 
         var post = new Post(
                 null,
                 photoUrl,
                 caption,
                 user,
-                Collections.emptySet(),
+                taggedPets,
                 Collections.emptySet(),
                 Collections.emptyList(),
                 null,
@@ -51,8 +65,6 @@ public class PostService {
     @Transactional(readOnly = true)
     public Page<PostResponse> getNewsFeed(Pageable pageable) {
         var user = getCurrentUser();
-        // Enforce business rule: Ignore client-side sorting and use only pagination info.
-        // The sorting is fixed in the repository query.
         var pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         var posts = postRepository.findNewsFeedForUser(user.getId(), pageRequest);
         return posts.map(postMapper::toPostResponse);

@@ -35,6 +35,9 @@ public class Pet implements Serializable {
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
