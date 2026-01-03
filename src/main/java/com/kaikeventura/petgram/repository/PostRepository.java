@@ -1,6 +1,7 @@
 package com.kaikeventura.petgram.repository;
 
 import com.kaikeventura.petgram.domain.Post;
+import com.kaikeventura.petgram.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,7 +34,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     """,
     countQuery = """
         SELECT count(p) FROM Post p WHERE p.author.id = :userId OR p.author.id IN (
-            SELECT DISTINCT pet.owner.id FROM Pet pet WHERE pet.id IN (
+            SELECT pet.owner.id FROM Pet pet WHERE pet.id IN (
                 SELECT f.addresseePet.id FROM Friendship f
                 WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.requesterPet.owner.id = :userId
                 UNION
@@ -43,4 +44,6 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
         )
     """)
     Page<Post> findNewsFeedForUser(@Param("userId") UUID userId, Pageable pageable);
+
+    Page<Post> findByAuthorOrderByCreatedAtDesc(User author, Pageable pageable);
 }

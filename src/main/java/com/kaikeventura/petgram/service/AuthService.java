@@ -31,10 +31,13 @@ public class AuthService {
         }
 
         var user = new User(
+                null,
                 request.name(),
                 request.email(),
                 passwordEncoder.encode(request.password()),
-                Set.of("USER")
+                Set.of("USER"),
+                null,
+                null
         );
 
         userRepository.save(user);
