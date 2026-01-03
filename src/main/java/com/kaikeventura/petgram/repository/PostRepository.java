@@ -28,8 +28,16 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
      * 5. 'p.author.id IN (...) combines both conditions, fetching posts from the user and their friends.
      * 6. The results are ordered by creation date in descending order.
      */
-    @Query("""
+    @Query(value = """
         SELECT p FROM Post p WHERE p.author.id = :userId OR p.author.id IN (
+            SELECT f.addressee.id FROM Friendship f WHERE f.requester.id = :userId AND f.status = 'ACCEPTED'
+            UNION
+            SELECT f.requester.id FROM Friendship f WHERE f.addressee.id = :userId AND f.status = 'ACCEPTED'
+        )
+        ORDER BY p.createdAt DESC
+    """,
+    countQuery = """
+        SELECT count(p) FROM Post p WHERE p.author.id = :userId OR p.author.id IN (
             SELECT f.addressee.id FROM Friendship f WHERE f.requester.id = :userId AND f.status = 'ACCEPTED'
             UNION
             SELECT f.requester.id FROM Friendship f WHERE f.addressee.id = :userId AND f.status = 'ACCEPTED'

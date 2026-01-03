@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -20,6 +21,9 @@ import java.util.UUID;
 public class Comment implements Serializable {
 
     @Id
+    @GeneratedValue(generator = "uuidv7")
+    @GenericGenerator(name = "uuidv7", strategy = "com.kaikeventura.petgram.config.jpa.UuidV7Generator")
+    @Column(updatable = false, nullable = false)
     private UUID id;
 
     @Column(nullable = false, length = 500)

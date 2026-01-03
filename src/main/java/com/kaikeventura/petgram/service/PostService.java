@@ -8,6 +8,7 @@ import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.PostMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,10 @@ public class PostService {
     @Transactional(readOnly = true)
     public Page<PostResponse> getNewsFeed(Pageable pageable) {
         var user = getCurrentUser();
-        var posts = postRepository.findNewsFeedForUser(user.getId(), pageable);
+        // Enforce business rule: Ignore client-side sorting and use only pagination info.
+        // The sorting is fixed in the repository query.
+        var pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        var posts = postRepository.findNewsFeedForUser(user.getId(), pageRequest);
         return posts.map(postMapper::toPostResponse);
     }
 
