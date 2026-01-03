@@ -27,6 +27,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=test
     volumes:
       - ./scripts/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      - ./scripts/cors.json:/etc/localstack/init/ready.d/cors.json # Mount the CORS config file
       - localstack_data:/var/lib/localstack
     networks:
       - petgram-network
