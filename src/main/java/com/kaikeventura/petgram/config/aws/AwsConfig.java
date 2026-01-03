@@ -5,14 +5,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 import java.net.URI;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Configuration
 public class AwsConfig {
@@ -33,13 +32,13 @@ public class AwsConfig {
     public S3Client s3Client() {
         var clientBuilder = S3Client.builder().region(Region.of(awsRegion));
 
-        // For local development with MinIO
+        // For local development with LocalStack/MinIO
         s3EndpointUrl.ifPresent(endpoint -> {
             clientBuilder.endpointOverride(URI.create(endpoint));
             clientBuilder.serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
         });
 
-        // Use static credentials if provided (for MinIO)
+        // Use static credentials if provided (for LocalStack/MinIO)
         if (awsAccessKeyId.isPresent() && awsSecretAccessKey.isPresent()) {
             clientBuilder.credentialsProvider(
                     StaticCredentialsProvider.create(
@@ -49,5 +48,24 @@ public class AwsConfig {
         }
 
         return clientBuilder.build();
+    }
+
+    @Bean
+    public S3Presigner s3Presigner() {
+        var presignerBuilder = S3Presigner.builder().region(Region.of(awsRegion));
+
+        // For local development with LocalStack/MinIO
+        s3EndpointUrl.ifPresent(endpoint -> presignerBuilder.endpointOverride(URI.create(endpoint)));
+
+        // Use static credentials if provided (for LocalStack/MinIO)
+        if (awsAccessKeyId.isPresent() && awsSecretAccessKey.isPresent()) {
+            presignerBuilder.credentialsProvider(
+                    StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create(awsAccessKeyId.get(), awsSecretAccessKey.get())
+                    )
+            );
+        }
+
+        return presignerBuilder.build();
     }
 }

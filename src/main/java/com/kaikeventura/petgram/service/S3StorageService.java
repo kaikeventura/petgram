@@ -29,6 +29,7 @@ public class S3StorageService {
             throw new IllegalArgumentException("Cannot upload an empty file.");
         }
 
+        // The file key is the unique identifier for the object in the bucket
         var fileKey = "pets/" + UUID.randomUUID() + "-" + file.getOriginalFilename();
 
         try {
@@ -40,10 +41,10 @@ public class S3StorageService {
 
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-            return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(fileKey)).toExternalForm();
+            // Return only the object key. The full URL will be generated on demand.
+            return fileKey;
 
         } catch (S3Exception | IOException e) {
-            // In a real-world scenario, you should log this exception properly.
             throw new RuntimeException("Failed to upload file to S3", e);
         }
     }
