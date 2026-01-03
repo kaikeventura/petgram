@@ -31,7 +31,6 @@ public class AuthService {
         }
 
         var user = new User(
-                null,
                 request.name(),
                 request.email(),
                 passwordEncoder.encode(request.password()),

@@ -20,7 +20,6 @@ import java.util.UUID;
 public class Comment implements Serializable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false, length = 500)
@@ -35,6 +34,6 @@ public class Comment implements Serializable {
     private Post post;
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 }

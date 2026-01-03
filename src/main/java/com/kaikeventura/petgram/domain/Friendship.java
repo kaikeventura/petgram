@@ -6,9 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serializable;
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "friendships")
@@ -34,4 +36,12 @@ public class Friendship implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FriendshipStatus status;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

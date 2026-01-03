@@ -4,9 +4,13 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.UUID;
+
+
 
 @Entity
 @Table(name = "likes")
@@ -27,4 +31,8 @@ public class Like implements Serializable {
     @MapsId("postId")
     @JoinColumn(name = "post_id")
     private Post post;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 }
