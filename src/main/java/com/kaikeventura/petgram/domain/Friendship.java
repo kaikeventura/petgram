@@ -2,10 +2,7 @@ package com.kaikeventura.petgram.domain;
 
 import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -15,6 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "friendships")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
@@ -44,4 +42,11 @@ public class Friendship implements Serializable {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public Friendship(FriendshipId id, User requester, User addressee, FriendshipStatus status) {
+        this.id = id;
+        this.requester = requester;
+        this.addressee = addressee;
+        this.status = status;
+    }
 }

@@ -1,13 +1,12 @@
 package com.kaikeventura.petgram.controller;
 
+import com.kaikeventura.petgram.dto.FriendshipRequestResponse;
 import com.kaikeventura.petgram.service.FriendshipService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,5 +26,10 @@ public class FriendshipController {
     public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID requesterId) {
         friendshipService.acceptFriendRequest(requesterId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/requests/pending")
+    public ResponseEntity<List<FriendshipRequestResponse>> getPendingRequests() {
+        return ResponseEntity.ok(friendshipService.getPendingRequests());
     }
 }
