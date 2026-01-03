@@ -46,4 +46,9 @@ public class PetController {
     public void deletePet(@PathVariable UUID petId) {
         petService.deletePet(petId);
     }
+
+    @GetMapping("/{petId}/friends")
+    public ResponseEntity<List<PetResponse>> listFriends(@PathVariable UUID petId) {
+        return ResponseEntity.ok(petService.listFriends(petId));
+    }
 }

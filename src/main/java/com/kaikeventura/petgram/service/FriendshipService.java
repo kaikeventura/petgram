@@ -31,7 +31,6 @@ public class FriendshipService {
         var currentUser = getCurrentUser();
         var requesterPet = findPetById(requesterPetId);
 
-        // Validate that the current user owns the requester pet
         if (!requesterPet.getOwner().equals(currentUser)) {
             throw new SecurityException("You are not the owner of the pet sending the request.");
         }
@@ -58,19 +57,16 @@ public class FriendshipService {
         var currentUser = getCurrentUser();
         var addresseePet = findPetById(addresseePetId);
 
-        // Validate that the current user owns the pet accepting the request
         if (!addresseePet.getOwner().equals(currentUser)) {
             throw new SecurityException("You are not the owner of the pet accepting the request.");
         }
 
-        var friendship = friendshipRepository.findFriendshipBetweenPets(requesterPetId, addresseePetId)
-                .orElseThrow(() -> new IllegalArgumentException("Friendship request not found."));
+        var friendship = findFriendship(requesterPetId, addresseePetId);
 
         if (friendship.getStatus() != FriendshipStatus.PENDING) {
             throw new IllegalStateException("This friend request is not pending and cannot be accepted.");
         }
 
-        // Ensure the correct pet is accepting the request
         if (!friendship.getAddresseePet().equals(addresseePet)) {
             throw new IllegalStateException("This pet is not the recipient of the friend request.");
         }
@@ -84,7 +80,6 @@ public class FriendshipService {
         var currentUser = getCurrentUser();
         var pet = findPetById(petId);
 
-        // Validate that the current user owns the pet
         if (!pet.getOwner().equals(currentUser)) {
             throw new SecurityException("You are not the owner of this pet.");
         }
@@ -96,6 +91,36 @@ public class FriendshipService {
                         friendship.getCreatedAt()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void removeFriendship(UUID petId1, UUID petId2) {
+        validateOwnershipForAction(petId1, petId2);
+        var friendship = findFriendship(petId1, petId2);
+        friendshipRepository.delete(friendship);
+    }
+
+    @Transactional
+    public void blockFriendship(UUID petId1, UUID petId2) {
+        validateOwnershipForAction(petId1, petId2);
+        var friendship = findFriendship(petId1, petId2);
+        friendship.setStatus(FriendshipStatus.BLOCKED);
+        friendshipRepository.save(friendship);
+    }
+
+    private void validateOwnershipForAction(UUID petId1, UUID petId2) {
+        var currentUser = getCurrentUser();
+        var pet1 = findPetById(petId1);
+        var pet2 = findPetById(petId2);
+
+        if (!pet1.getOwner().equals(currentUser) && !pet2.getOwner().equals(currentUser)) {
+            throw new SecurityException("You must be the owner of at least one of the pets to modify the friendship.");
+        }
+    }
+
+    private Friendship findFriendship(UUID petId1, UUID petId2) {
+        return friendshipRepository.findFriendshipBetweenPets(petId1, petId2)
+                .orElseThrow(() -> new IllegalArgumentException("Friendship not found between the pets."));
     }
 
     private User getCurrentUser() {

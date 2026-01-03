@@ -24,4 +24,6 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Friendsh
     Optional<Friendship> findFriendshipBetweenPets(@Param("petId1") UUID petId1, @Param("petId2") UUID petId2);
 
     List<Friendship> findByAddresseePetAndStatus(Pet addresseePet, FriendshipStatus status);
+
+    List<Friendship> findByRequesterPetAndStatus(Pet requesterPet, FriendshipStatus status);
 }

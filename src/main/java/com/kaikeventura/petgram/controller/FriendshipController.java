@@ -5,6 +5,7 @@ import com.kaikeventura.petgram.dto.FriendshipRequestResponse;
 import com.kaikeventura.petgram.service.FriendshipService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,20 +20,32 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
 
     @PostMapping("/request")
-    public ResponseEntity<Void> sendFriendRequest(@Valid @RequestBody FriendshipActionRequest request) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void sendFriendRequest(@Valid @RequestBody FriendshipActionRequest request) {
         friendshipService.sendFriendRequest(request.requesterPetId(), request.addresseePetId());
-        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/accept")
-    public ResponseEntity<Void> acceptFriendRequest(@Valid @RequestBody FriendshipActionRequest request) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void acceptFriendRequest(@Valid @RequestBody FriendshipActionRequest request) {
         // For accepting, the addressee is the one taking action.
         friendshipService.acceptFriendRequest(request.addresseePetId(), request.requesterPetId());
-        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/requests/pending/{petId}")
     public ResponseEntity<List<FriendshipRequestResponse>> getPendingRequests(@PathVariable UUID petId) {
         return ResponseEntity.ok(friendshipService.getPendingRequestsForPet(petId));
+    }
+
+    @PostMapping("/remove")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeFriendship(@Valid @RequestBody FriendshipActionRequest request) {
+        friendshipService.removeFriendship(request.requesterPetId(), request.addresseePetId());
+    }
+
+    @PostMapping("/block")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void blockFriendship(@Valid @RequestBody FriendshipActionRequest request) {
+        friendshipService.blockFriendship(request.requesterPetId(), request.addresseePetId());
     }
 }

@@ -1,9 +1,12 @@
 package com.kaikeventura.petgram.service;
 
+import com.kaikeventura.petgram.domain.Friendship;
 import com.kaikeventura.petgram.domain.Pet;
 import com.kaikeventura.petgram.domain.User;
+import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import com.kaikeventura.petgram.dto.PetRequest;
 import com.kaikeventura.petgram.dto.PetResponse;
+import com.kaikeventura.petgram.repository.FriendshipRepository;
 import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.PetMapper;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ public class PetService {
 
     private final PetRepository petRepository;
     private final UserRepository userRepository;
+    private final FriendshipRepository friendshipRepository;
     private final PetMapper petMapper;
 
     @Transactional
@@ -59,8 +64,7 @@ public class PetService {
     @Transactional
     public PetResponse updatePet(UUID petId, PetRequest petRequest) {
         var currentUser = getCurrentUser();
-        var pet = petRepository.findById(petId)
-                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+        var pet = findPetByIdDomain(petId);
 
         if (!pet.getOwner().equals(currentUser)) {
             throw new SecurityException("You are not the owner of this pet.");
@@ -77,8 +81,7 @@ public class PetService {
     @Transactional
     public void deletePet(UUID petId) {
         var currentUser = getCurrentUser();
-        var pet = petRepository.findById(petId)
-                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+        var pet = findPetByIdDomain(petId);
 
         if (!pet.getOwner().equals(currentUser)) {
             throw new SecurityException("You are not the owner of this pet.");
@@ -87,10 +90,32 @@ public class PetService {
         petRepository.delete(pet);
     }
 
+    @Transactional(readOnly = true)
+    public List<PetResponse> listFriends(UUID petId) {
+        var pet = findPetByIdDomain(petId);
+
+        var friendsAsRequester = friendshipRepository.findByRequesterPetAndStatus(pet, FriendshipStatus.ACCEPTED)
+                .stream()
+                .map(Friendship::getAddresseePet);
+
+        var friendsAsAddressee = friendshipRepository.findByAddresseePetAndStatus(pet, FriendshipStatus.ACCEPTED)
+                .stream()
+                .map(Friendship::getRequesterPet);
+
+        return Stream.concat(friendsAsRequester, friendsAsAddressee)
+                .map(petMapper::toPetResponse)
+                .collect(Collectors.toList());
+    }
+
     private User getCurrentUser() {
         var principal = (org.springframework.security.core.userdetails.User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var userId = UUID.fromString(principal.getUsername());
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
+    }
+
+    private Pet findPetByIdDomain(UUID petId) {
+        return petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
     }
 }
