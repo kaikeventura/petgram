@@ -65,8 +65,9 @@ public class PostController {
     })
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponse> findPostById(
-            @Parameter(description = "The UUID of the post to fetch.") @PathVariable UUID postId
+            @Parameter(description = "The UUID of the post to fetch.") @PathVariable UUID postId,
+            @Parameter(description = "The ID of the pet viewing the post (optional).") @RequestHeader(value = "X-Pet-Id", required = false) UUID petId
     ) {
-        return ResponseEntity.ok(postService.findPostById(postId));
+        return ResponseEntity.ok(postService.findPostById(postId, petId));
     }
 }

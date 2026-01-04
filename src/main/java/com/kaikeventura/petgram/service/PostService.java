@@ -66,7 +66,7 @@ public class PostService {
         );
 
         var savedPost = postRepository.save(post);
-        return postMapper.toPostResponse(savedPost);
+        return postMapper.toPostResponse(savedPost, petId);
     }
 
     @Transactional(readOnly = true)
@@ -81,13 +81,13 @@ public class PostService {
 
         var pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         var posts = postRepository.findNewsFeedForPet(petId, pageRequest);
-        return posts.map(postMapper::toPostResponse);
+        return posts.map(post -> postMapper.toPostResponse(post, petId));
     }
 
     @Transactional(readOnly = true)
-    public PostResponse findPostById(UUID postId) {
+    public PostResponse findPostById(UUID postId, UUID viewerId) {
         return postRepository.findById(postId)
-                .map(postMapper::toPostResponse)
+                .map(post -> postMapper.toPostResponse(post, viewerId))
                 .orElseThrow(() -> new IllegalArgumentException("Post not found."));
     }
 

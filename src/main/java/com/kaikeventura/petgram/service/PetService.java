@@ -130,7 +130,7 @@ public class PetService {
     public Page<PostResponse> findPostsByPet(UUID petId, Pageable pageable) {
         var pet = findPetByIdDomain(petId);
         return postRepository.findByAuthorInOrderByCreatedAtDesc(List.of(pet), pageable)
-                .map(postMapper::toPostResponse);
+                .map(post -> postMapper.toPostResponse(post, petId));
     }
 
     @Transactional

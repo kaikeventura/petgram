@@ -37,14 +37,6 @@ public class UserService {
         return userProfileMapper.toUserProfileResponse(user);
     }
 
-    @Transactional(readOnly = true)
-    public Page<PostResponse> getCurrentUserPosts(Pageable pageable) {
-        var user = getCurrentUser();
-        var pets = petRepository.findByOwnerId(user.getId());
-        return postRepository.findByAuthorInOrderByCreatedAtDesc(pets, pageable)
-                .map(postMapper::toPostResponse);
-    }
-
     @Transactional
     public UserProfileResponse updateCurrentUser(UserUpdateRequest userUpdateRequest) {
         var user = getCurrentUser();

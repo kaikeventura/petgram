@@ -25,6 +25,9 @@ public record PostResponse(
         @Schema(description = "Total number of comments on the post.")
         long commentCount,
 
+        @Schema(description = "Indicates if the post has been liked by the current pet.")
+        boolean isLiked,
+
         @Schema(description = "The timestamp when the post was created.")
         LocalDateTime createdAt
 ) {
