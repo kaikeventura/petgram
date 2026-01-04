@@ -6,7 +6,8 @@ import com.kaikeventura.petgram.domain.Pet;
 import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import com.kaikeventura.petgram.dto.FriendshipRequestResponse;
-import com.kaikeventura.petgram.dto.FriendshipStatusResponse;
+import com.kaikeventura.petgram.dto.RelationshipStatus;
+import com.kaikeventura.petgram.dto.RelationshipStatusResponse;
 import com.kaikeventura.petgram.event.FriendshipAcceptedEvent;
 import com.kaikeventura.petgram.event.FriendshipRequestedEvent;
 import com.kaikeventura.petgram.repository.FriendshipRepository;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -32,49 +34,50 @@ public class FriendshipService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public void sendFriendRequest(UUID requesterPetId, UUID addresseePetId) {
+    public void sendFollowRequest(UUID requesterPetId, UUID targetPetId) {
         var currentUser = getCurrentUser();
         var requesterPet = findPetById(requesterPetId);
 
         if (!requesterPet.getOwner().equals(currentUser)) {
-            throw new SecurityException("You are not the owner of the pet sending the request.");
+            throw new SecurityException("You can only send follow requests for your own pet.");
         }
 
-        if (requesterPetId.equals(addresseePetId)) {
-            throw new IllegalArgumentException("A pet cannot send a friend request to itself.");
+        if (requesterPetId.equals(targetPetId)) {
+            throw new IllegalArgumentException("A pet cannot follow itself.");
         }
 
-        var addresseePet = findPetById(addresseePetId);
+        var targetPet = findPetById(targetPetId);
 
-        friendshipRepository.findFriendshipBetweenPets(requesterPetId, addresseePetId)
+        friendshipRepository.findById(new FriendshipId(requesterPetId, targetPetId))
                 .ifPresent(friendship -> {
-                    throw new IllegalStateException("A friendship request already exists or has been established between these pets.");
+                    throw new IllegalStateException("A follow request has already been sent or established.");
                 });
 
-        var friendshipId = new FriendshipId(requesterPetId, addresseePetId);
-        var friendship = new Friendship(friendshipId, requesterPet, addresseePet, FriendshipStatus.PENDING);
+        var friendshipId = new FriendshipId(requesterPetId, targetPetId);
+        var friendship = new Friendship(friendshipId, requesterPet, targetPet, FriendshipStatus.PENDING);
 
         var savedFriendship = friendshipRepository.save(friendship);
         eventPublisher.publishEvent(new FriendshipRequestedEvent(this, savedFriendship));
     }
 
     @Transactional
-    public void acceptFriendRequest(UUID addresseePetId, UUID requesterPetId) {
+    public void acceptFollowRequest(UUID targetPetId, UUID requesterPetId) {
         var currentUser = getCurrentUser();
-        var addresseePet = findPetById(addresseePetId);
+        var targetPet = findPetById(targetPetId);
 
-        if (!addresseePet.getOwner().equals(currentUser)) {
+        if (!targetPet.getOwner().equals(currentUser)) {
             throw new SecurityException("You are not the owner of the pet accepting the request.");
         }
 
-        var friendship = findFriendship(requesterPetId, addresseePetId);
+        var friendship = friendshipRepository.findById(new FriendshipId(requesterPetId, targetPetId))
+                .orElseThrow(() -> new IllegalArgumentException("Follow request not found."));
 
         if (friendship.getStatus() != FriendshipStatus.PENDING) {
-            throw new IllegalStateException("This friend request is not pending and cannot be accepted.");
+            throw new IllegalStateException("This follow request is not pending.");
         }
 
-        if (!friendship.getAddresseePet().equals(addresseePet)) {
-            throw new IllegalStateException("This pet is not the recipient of the friend request.");
+        if (!friendship.getAddresseePet().equals(targetPet)) {
+            throw new IllegalStateException("This pet is not the recipient of the follow request.");
         }
 
         friendship.setStatus(FriendshipStatus.ACCEPTED);
@@ -82,13 +85,29 @@ public class FriendshipService {
         eventPublisher.publishEvent(new FriendshipAcceptedEvent(this, savedFriendship));
     }
 
+    @Transactional
+    public void unfollow(UUID requesterPetId, UUID targetPetId) {
+        var currentUser = getCurrentUser();
+        var requesterPet = findPetById(requesterPetId);
+
+        if (!requesterPet.getOwner().equals(currentUser)) {
+            throw new SecurityException("You can only unfollow for your own pet.");
+        }
+
+        var friendshipId = new FriendshipId(requesterPetId, targetPetId);
+        if (!friendshipRepository.existsById(friendshipId)) {
+            throw new IllegalArgumentException("You are not following this pet.");
+        }
+        friendshipRepository.deleteById(friendshipId);
+    }
+
     @Transactional(readOnly = true)
-    public List<FriendshipRequestResponse> getPendingRequestsForPet(UUID petId) {
+    public List<FriendshipRequestResponse> getPendingRequests(UUID petId) {
         var currentUser = getCurrentUser();
         var pet = findPetById(petId);
 
         if (!pet.getOwner().equals(currentUser)) {
-            throw new SecurityException("You are not the owner of this pet.");
+            throw new SecurityException("You can only view pending requests for your own pet.");
         }
 
         return friendshipRepository.findByAddresseePetAndStatus(pet, FriendshipStatus.PENDING).stream()
@@ -100,42 +119,39 @@ public class FriendshipService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public void removeFriendship(UUID petId1, UUID petId2) {
-        validateOwnershipForAction(petId1, petId2);
-        var friendship = findFriendship(petId1, petId2);
-        friendshipRepository.delete(friendship);
-    }
-
-    @Transactional
-    public void blockFriendship(UUID petId1, UUID petId2) {
-        validateOwnershipForAction(petId1, petId2);
-        var friendship = findFriendship(petId1, petId2);
-        friendship.setStatus(FriendshipStatus.BLOCKED);
-        friendshipRepository.save(friendship);
-    }
-
     @Transactional(readOnly = true)
-    public FriendshipStatusResponse getFriendshipStatus(UUID petId1, UUID petId2) {
-        var status = friendshipRepository.findFriendshipBetweenPets(petId1, petId2)
-                .map(Friendship::getStatus)
-                .orElse(null);
-        return new FriendshipStatusResponse(status);
-    }
-
-    private void validateOwnershipForAction(UUID petId1, UUID petId2) {
+    public RelationshipStatusResponse getRelationshipStatus(UUID currentPetId, UUID targetPetId) {
         var currentUser = getCurrentUser();
-        var pet1 = findPetById(petId1);
-        var pet2 = findPetById(petId2);
+        var currentPet = findPetById(currentPetId);
 
-        if (!pet1.getOwner().equals(currentUser) && !pet2.getOwner().equals(currentUser)) {
-            throw new SecurityException("You must be the owner of at least one of the pets to modify the friendship.");
+        if (!currentPet.getOwner().equals(currentUser)) {
+            throw new SecurityException("You can only check the status for your own pet.");
         }
-    }
 
-    private Friendship findFriendship(UUID petId1, UUID petId2) {
-        return friendshipRepository.findFriendshipBetweenPets(petId1, petId2)
-                .orElseThrow(() -> new IllegalArgumentException("Friendship not found between the pets."));
+        Optional<Friendship> iFollowTarget = friendshipRepository.findById(new FriendshipId(currentPetId, targetPetId));
+        Optional<Friendship> targetFollowsMe = friendshipRepository.findById(new FriendshipId(targetPetId, currentPetId));
+
+        boolean iFollow = iFollowTarget.isPresent() && iFollowTarget.get().getStatus() == FriendshipStatus.ACCEPTED;
+        boolean targetFollows = targetFollowsMe.isPresent() && targetFollowsMe.get().getStatus() == FriendshipStatus.ACCEPTED;
+        boolean pendingSent = iFollowTarget.isPresent() && iFollowTarget.get().getStatus() == FriendshipStatus.PENDING;
+        boolean pendingReceived = targetFollowsMe.isPresent() && targetFollowsMe.get().getStatus() == FriendshipStatus.PENDING;
+
+        RelationshipStatus status;
+        if (iFollow && targetFollows) {
+            status = RelationshipStatus.MUTUAL;
+        } else if (iFollow) {
+            status = RelationshipStatus.FOLLOWING;
+        } else if (targetFollows) {
+            status = RelationshipStatus.FOLLOWED_BY;
+        } else if (pendingSent) {
+            status = RelationshipStatus.PENDING_SENT;
+        } else if (pendingReceived) {
+            status = RelationshipStatus.PENDING_RECEIVED;
+        } else {
+            status = RelationshipStatus.NONE;
+        }
+
+        return new RelationshipStatusResponse(status);
     }
 
     private User getCurrentUser() {
