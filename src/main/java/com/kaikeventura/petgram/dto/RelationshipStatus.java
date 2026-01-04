@@ -35,5 +35,11 @@ public enum RelationshipStatus {
      * Both pets follow each other.
      * UI Action: Show "Following" or "Friends" button.
      */
-    MUTUAL
+    MUTUAL,
+
+    /**
+     * The current pet has requested to follow the target pet back.
+     * UI Action: Show "Requested" button.
+     */
+    PENDING_FOLLOW_BACK
 }

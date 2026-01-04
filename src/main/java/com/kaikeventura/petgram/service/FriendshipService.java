@@ -54,7 +54,10 @@ public class FriendshipService {
                 });
 
         var friendshipId = new FriendshipId(requesterPetId, targetPetId);
-        var friendship = new Friendship(friendshipId, requesterPet, targetPet, FriendshipStatus.PENDING);
+        var status = friendshipRepository.findById(new FriendshipId(targetPetId, requesterPetId)).isPresent()
+                ? FriendshipStatus.PENDING_FOLLOW_BACK
+                : FriendshipStatus.PENDING;
+        var friendship = new Friendship(friendshipId, requesterPet, targetPet, status);
 
         var savedFriendship = friendshipRepository.save(friendship);
         eventPublisher.publishEvent(new FriendshipRequestedEvent(this, savedFriendship));
@@ -72,7 +75,7 @@ public class FriendshipService {
         var friendship = friendshipRepository.findById(new FriendshipId(requesterPetId, targetPetId))
                 .orElseThrow(() -> new IllegalArgumentException("Follow request not found."));
 
-        if (friendship.getStatus() != FriendshipStatus.PENDING) {
+        if (friendship.getStatus() != FriendshipStatus.PENDING && friendship.getStatus() != FriendshipStatus.PENDING_FOLLOW_BACK) {
             throw new IllegalStateException("This follow request is not pending.");
         }
 
@@ -135,18 +138,21 @@ public class FriendshipService {
         boolean targetFollows = targetFollowsMe.isPresent() && targetFollowsMe.get().getStatus() == FriendshipStatus.ACCEPTED;
         boolean pendingSent = iFollowTarget.isPresent() && iFollowTarget.get().getStatus() == FriendshipStatus.PENDING;
         boolean pendingReceived = targetFollowsMe.isPresent() && targetFollowsMe.get().getStatus() == FriendshipStatus.PENDING;
+        boolean pendingFollowBack = iFollowTarget.isPresent() && iFollowTarget.get().getStatus() == FriendshipStatus.PENDING_FOLLOW_BACK;
 
         RelationshipStatus status;
-        if (iFollow && targetFollows) {
+        if (pendingSent) {
+            status = RelationshipStatus.PENDING_SENT;
+        } else if (pendingReceived) {
+            status = RelationshipStatus.PENDING_RECEIVED;
+        } else if (pendingFollowBack) {
+            status = RelationshipStatus.PENDING_FOLLOW_BACK;
+        } else if (iFollow && targetFollows) {
             status = RelationshipStatus.MUTUAL;
         } else if (iFollow) {
             status = RelationshipStatus.FOLLOWING;
         } else if (targetFollows) {
             status = RelationshipStatus.FOLLOWED_BY;
-        } else if (pendingSent) {
-            status = RelationshipStatus.PENDING_SENT;
-        } else if (pendingReceived) {
-            status = RelationshipStatus.PENDING_RECEIVED;
         } else {
             status = RelationshipStatus.NONE;
         }
