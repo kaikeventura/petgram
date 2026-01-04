@@ -13,6 +13,7 @@ import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.PetMapper;
 import com.kaikeventura.petgram.service.mappers.PostMapper;
+import com.kaikeventura.petgram.service.mappers.S3UrlMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ public class PetService {
     private final PostRepository postRepository;
     private final S3StorageService storageService;
     private final PetMapper petMapper;
+    private final S3UrlMapper s3UrlMapper;
     private final PostMapper postMapper;
 
     @Transactional
@@ -147,7 +149,7 @@ public class PetService {
         petRepository.save(pet);
 
         // Generate a presigned URL for the immediate response
-        return petMapper.generatePresignedUrl(avatarKey);
+        return s3UrlMapper.generatePresignedUrl(avatarKey);
     }
 
     private User getCurrentUser() {
