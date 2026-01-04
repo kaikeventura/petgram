@@ -41,5 +41,11 @@ public enum RelationshipStatus {
      * The current pet has requested to follow the target pet back.
      * UI Action: Show "Requested" button.
      */
-    PENDING_FOLLOW_BACK
+    PENDING_FOLLOW_BACK,
+
+    /**
+     * The current pet has a pending follow-back request from the target pet.
+     * UI Action: Show "Accept Follow Back" button.
+     */
+    ACCEPT_FOLLOW_BACK
 }

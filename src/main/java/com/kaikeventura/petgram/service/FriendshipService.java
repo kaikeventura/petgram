@@ -139,6 +139,7 @@ public class FriendshipService {
         boolean pendingSent = iFollowTarget.isPresent() && iFollowTarget.get().getStatus() == FriendshipStatus.PENDING;
         boolean pendingReceived = targetFollowsMe.isPresent() && targetFollowsMe.get().getStatus() == FriendshipStatus.PENDING;
         boolean pendingFollowBack = iFollowTarget.isPresent() && iFollowTarget.get().getStatus() == FriendshipStatus.PENDING_FOLLOW_BACK;
+        boolean acceptFollowBack = targetFollowsMe.isPresent() && targetFollowsMe.get().getStatus() == FriendshipStatus.PENDING_FOLLOW_BACK;
 
         RelationshipStatus status;
         if (pendingSent) {
@@ -147,6 +148,8 @@ public class FriendshipService {
             status = RelationshipStatus.PENDING_RECEIVED;
         } else if (pendingFollowBack) {
             status = RelationshipStatus.PENDING_FOLLOW_BACK;
+        } else if (acceptFollowBack) {
+            status = RelationshipStatus.ACCEPT_FOLLOW_BACK;
         } else if (iFollow && targetFollows) {
             status = RelationshipStatus.MUTUAL;
         } else if (iFollow) {
