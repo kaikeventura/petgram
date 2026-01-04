@@ -15,6 +15,8 @@ import java.util.UUID;
 public interface PetRepository extends JpaRepository<Pet, UUID> {
     List<Pet> findByOwner(User owner);
 
+    List<Pet> findByOwnerId(UUID ownerId);
+
     @Query("SELECT p FROM Pet p WHERE p.name ILIKE %:name%")
     List<Pet> findByNameContainingIgnoreCase(@Param("name") String name, Pageable pageable);
 }

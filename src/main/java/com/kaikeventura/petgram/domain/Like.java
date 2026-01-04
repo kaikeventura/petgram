@@ -20,9 +20,9 @@ public class Like implements Serializable {
     private LikeId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("userId")
-    @JoinColumn(name = "user_id")
-    private User user;
+    @MapsId("petId")
+    @JoinColumn(name = "pet_id")
+    private Pet pet;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("postId")

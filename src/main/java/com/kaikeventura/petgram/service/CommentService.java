@@ -6,6 +6,7 @@ import com.kaikeventura.petgram.dto.CommentRequest;
 import com.kaikeventura.petgram.dto.CommentResponse;
 import com.kaikeventura.petgram.event.PostCommentedEvent;
 import com.kaikeventura.petgram.repository.CommentRepository;
+import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.CommentMapper;
@@ -25,27 +26,35 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final PetRepository petRepository;
     private final PostRepository postRepository;
     private final CommentMapper commentMapper;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public CommentResponse createComment(UUID postId, CommentRequest commentRequest) {
+    public CommentResponse createComment(UUID petId, UUID postId, CommentRequest commentRequest) {
         var user = getCurrentUser();
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only comment as your own pet.");
+        }
+
         var post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found."));
 
         var comment = new Comment(
                 null,
                 commentRequest.text(),
-                user,
+                pet,
                 post,
                 null
         );
 
         var savedComment = commentRepository.save(comment);
 
-        if (!post.getAuthor().equals(user)) {
+        if (!post.getAuthor().equals(pet)) {
             eventPublisher.publishEvent(new PostCommentedEvent(this, savedComment));
         }
 
@@ -53,13 +62,20 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(UUID commentId) {
+    public void deleteComment(UUID petId, UUID commentId) {
         var user = getCurrentUser();
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only delete comments as your own pet.");
+        }
+
         var comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found."));
 
-        boolean isCommentAuthor = comment.getUser().equals(user);
-        boolean isPostAuthor = comment.getPost().getAuthor().equals(user);
+        boolean isCommentAuthor = comment.getAuthor().equals(pet);
+        boolean isPostAuthor = comment.getPost().getAuthor().equals(pet);
 
         if (!isCommentAuthor && !isPostAuthor) {
             throw new SecurityException("You are not authorized to delete this comment.");

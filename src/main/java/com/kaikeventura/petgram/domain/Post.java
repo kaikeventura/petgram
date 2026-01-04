@@ -36,7 +36,7 @@ public class Post implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+    private Pet author;
 
     @ManyToMany
     @JoinTable(

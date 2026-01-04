@@ -12,8 +12,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LikeId implements Serializable {
-    @Column(name = "user_id")
-    private UUID userId;
+    @Column(name = "pet_id")
+    private UUID petId;
 
     @Column(name = "post_id")
     private UUID postId;

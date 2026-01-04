@@ -5,6 +5,7 @@ import com.kaikeventura.petgram.dto.PasswordUpdateRequest;
 import com.kaikeventura.petgram.dto.PostResponse;
 import com.kaikeventura.petgram.dto.UserProfileResponse;
 import com.kaikeventura.petgram.dto.UserUpdateRequest;
+import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.PostMapper;
@@ -25,6 +26,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final PetRepository petRepository;
     private final UserProfileMapper userProfileMapper;
     private final PostMapper postMapper;
     private final PasswordEncoder passwordEncoder;
@@ -38,7 +40,8 @@ public class UserService {
     @Transactional(readOnly = true)
     public Page<PostResponse> getCurrentUserPosts(Pageable pageable) {
         var user = getCurrentUser();
-        return postRepository.findByAuthorOrderByCreatedAtDesc(user, pageable)
+        var pets = petRepository.findByOwnerId(user.getId());
+        return postRepository.findByAuthorInOrderByCreatedAtDesc(pets, pageable)
                 .map(postMapper::toPostResponse);
     }
 
@@ -66,21 +69,6 @@ public class UserService {
     public void deleteCurrentUser() {
         var user = getCurrentUser();
         userRepository.delete(user);
-    }
-
-    @Transactional(readOnly = true)
-    public UserProfileResponse getUserProfile(UUID userId) {
-        return userRepository.findById(userId)
-                .map(userProfileMapper::toUserProfileResponse)
-                .orElseThrow(() -> new IllegalArgumentException("User not found."));
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PostResponse> getUserPosts(UUID userId, Pageable pageable) {
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found."));
-        return postRepository.findByAuthorOrderByCreatedAtDesc(user, pageable)
-                .map(postMapper::toPostResponse);
     }
 
     private User getCurrentUser() {

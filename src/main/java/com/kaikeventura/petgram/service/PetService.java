@@ -6,11 +6,16 @@ import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.domain.enums.FriendshipStatus;
 import com.kaikeventura.petgram.dto.PetRequest;
 import com.kaikeventura.petgram.dto.PetResponse;
+import com.kaikeventura.petgram.dto.PostResponse;
 import com.kaikeventura.petgram.repository.FriendshipRepository;
 import com.kaikeventura.petgram.repository.PetRepository;
+import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import com.kaikeventura.petgram.service.mappers.PetMapper;
+import com.kaikeventura.petgram.service.mappers.PostMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +33,10 @@ public class PetService {
     private final PetRepository petRepository;
     private final UserRepository userRepository;
     private final FriendshipRepository friendshipRepository;
+    private final PostRepository postRepository;
     private final S3StorageService storageService;
     private final PetMapper petMapper;
+    private final PostMapper postMapper;
 
     @Transactional
     public PetResponse createPet(PetRequest petRequest) {
@@ -117,6 +124,13 @@ public class PetService {
         return petRepository.findByOwner(owner).stream()
                 .map(petMapper::toPetResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostResponse> findPostsByPet(UUID petId, Pageable pageable) {
+        var pet = findPetByIdDomain(petId);
+        return postRepository.findByAuthorInOrderByCreatedAtDesc(List.of(pet), pageable)
+                .map(postMapper::toPostResponse);
     }
 
     @Transactional

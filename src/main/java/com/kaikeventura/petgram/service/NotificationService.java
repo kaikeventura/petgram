@@ -36,10 +36,10 @@ public class NotificationService {
     @EventListener
     public void handlePostLikedEvent(PostLikedEvent event) {
         var like = event.getLike();
-        var recipient = like.getPost().getAuthor();
-        var actor = like.getUser();
+        var recipient = like.getPost().getAuthor().getOwner();
+        var actor = like.getPet();
 
-        var message = String.format("%s liked your post.", actor.getName());
+        var message = String.format("%s liked your pet's post.", actor.getName());
         var link = String.format("/posts/%s", like.getPost().getId());
 
         createNotification(recipient, NotificationType.POST_LIKE, message, link);
@@ -49,10 +49,10 @@ public class NotificationService {
     @EventListener
     public void handlePostCommentedEvent(PostCommentedEvent event) {
         var comment = event.getComment();
-        var recipient = comment.getPost().getAuthor();
-        var actor = comment.getUser();
+        var recipient = comment.getPost().getAuthor().getOwner();
+        var actor = comment.getAuthor();
 
-        var message = String.format("%s commented on your post.", actor.getName());
+        var message = String.format("%s commented on your pet's post.", actor.getName());
         var link = String.format("/posts/%s", comment.getPost().getId());
 
         createNotification(recipient, NotificationType.POST_COMMENT, message, link);

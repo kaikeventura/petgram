@@ -39,23 +39,27 @@ public class CommentController {
     })
     @PostMapping("/posts/{postId}/comments")
     public ResponseEntity<CommentResponse> createComment(
+            @Parameter(description = "The ID of the pet commenting on the post.") @RequestHeader("X-Pet-Id") UUID petId,
             @Parameter(description = "The UUID of the post to comment on.") @PathVariable UUID postId,
             @Valid @RequestBody CommentRequest commentRequest
     ) {
-        var createdComment = commentService.createComment(postId, commentRequest);
+        var createdComment = commentService.createComment(petId, postId, commentRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdComment);
     }
 
-    @Operation(summary = "Delete a comment", description = "Deletes a comment. The current user must be the author of the comment or the author of the post.")
+    @Operation(summary = "Delete a comment", description = "Deletes a comment. The current pet must be the author of the comment or the author of the post.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Comment deleted successfully"),
-            @ApiResponse(responseCode = "403", description = "Forbidden if the user is not authorized to delete the comment", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden if the pet is not authorized to delete the comment", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Comment not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/comments/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(@Parameter(description = "The UUID of the comment to delete.") @PathVariable UUID commentId) {
-        commentService.deleteComment(commentId);
+    public void deleteComment(
+            @Parameter(description = "The ID of the pet deleting the comment.") @RequestHeader("X-Pet-Id") UUID petId,
+            @Parameter(description = "The UUID of the comment to delete.") @PathVariable UUID commentId
+    ) {
+        commentService.deleteComment(petId, commentId);
     }
 
     @Operation(summary = "List comments for a post", description = "Fetches a paginated list of comments for a specific post.")

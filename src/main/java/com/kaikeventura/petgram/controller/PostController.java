@@ -39,18 +39,22 @@ public class PostController {
     })
     @PostMapping
     public ResponseEntity<PostResponse> createPost(
+            @Parameter(description = "The ID of the pet creating the post.") @RequestHeader("X-Pet-Id") UUID petId,
             @Parameter(description = "The caption for the post.") @RequestParam("caption") String caption,
             @Parameter(description = "A list of pet UUIDs to be tagged in the post.") @RequestParam(value = "taggedPetIds", required = false) List<UUID> taggedPetIds,
             @Parameter(description = "The image file for the post.") @RequestParam("file") MultipartFile file
     ) {
-        var post = postService.createPost(caption, taggedPetIds, file);
+        var post = postService.createPost(petId, caption, taggedPetIds, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 
     @Operation(summary = "Get the news feed", description = "Fetches the paginated news feed for the authenticated user, containing posts from the user and their friends' owners.")
     @GetMapping("/feed")
-    public ResponseEntity<Page<PostResponse>> getNewsFeed(@ParameterObject Pageable pageable) {
-        var feed = postService.getNewsFeed(pageable);
+    public ResponseEntity<Page<PostResponse>> getNewsFeed(
+            @Parameter(description = "The ID of the pet viewing the feed.") @RequestHeader("X-Pet-Id") UUID petId,
+            @ParameterObject Pageable pageable
+    ) {
+        var feed = postService.getNewsFeed(petId, pageable);
         return ResponseEntity.ok(feed);
     }
 

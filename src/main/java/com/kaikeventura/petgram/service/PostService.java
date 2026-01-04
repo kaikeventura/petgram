@@ -33,8 +33,15 @@ public class PostService {
     private final PostMapper postMapper;
 
     @Transactional
-    public PostResponse createPost(String caption, List<UUID> taggedPetIds, MultipartFile file) {
+    public PostResponse createPost(UUID petId, String caption, List<UUID> taggedPetIds, MultipartFile file) {
         var user = getCurrentUser();
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only create posts for your own pets.");
+        }
+
         var photoUrl = storageService.uploadFile(file);
 
         var taggedPets = new HashSet<Pet>();
@@ -50,7 +57,7 @@ public class PostService {
                 null,
                 photoUrl,
                 caption,
-                user,
+                pet,
                 taggedPets,
                 Collections.emptySet(),
                 Collections.emptyList(),
@@ -63,10 +70,17 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PostResponse> getNewsFeed(Pageable pageable) {
+    public Page<PostResponse> getNewsFeed(UUID petId, Pageable pageable) {
         var user = getCurrentUser();
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only view the feed for your own pets.");
+        }
+
         var pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        var posts = postRepository.findNewsFeedForUser(user.getId(), pageRequest);
+        var posts = postRepository.findNewsFeedForPet(petId, pageRequest);
         return posts.map(postMapper::toPostResponse);
     }
 

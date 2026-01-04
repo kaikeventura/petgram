@@ -30,30 +30,36 @@ public class LikeController {
 
     private final LikeService likeService;
 
-    @Operation(summary = "Like a post", description = "Adds a 'like' from the current user to a post. Fails if the post is already liked.")
+    @Operation(summary = "Like a post", description = "Adds a 'like' from the current pet to a post. Fails if the post is already liked.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Post liked successfully"),
             @ApiResponse(responseCode = "404", description = "Post not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "409", description = "Conflict, user has already liked this post", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(responseCode = "409", description = "Conflict, pet has already liked this post", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/like")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void likePost(@Parameter(description = "The UUID of the post to like.") @PathVariable UUID postId) {
-        likeService.likePost(postId);
+    public void likePost(
+            @Parameter(description = "The ID of the pet liking the post.") @RequestHeader("X-Pet-Id") UUID petId,
+            @Parameter(description = "The UUID of the post to like.") @PathVariable UUID postId
+    ) {
+        likeService.likePost(petId, postId);
     }
 
-    @Operation(summary = "Unlike a post", description = "Removes the current user's 'like' from a post.")
+    @Operation(summary = "Unlike a post", description = "Removes the current pet's 'like' from a post.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Post unliked successfully"),
-            @ApiResponse(responseCode = "409", description = "Conflict, user has not liked this post", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(responseCode = "409", description = "Conflict, pet has not liked this post", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @DeleteMapping("/like")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void unlikePost(@Parameter(description = "The UUID of the post to unlike.") @PathVariable UUID postId) {
-        likeService.unlikePost(postId);
+    public void unlikePost(
+            @Parameter(description = "The ID of the pet unliking the post.") @RequestHeader("X-Pet-Id") UUID petId,
+            @Parameter(description = "The UUID of the post to unlike.") @PathVariable UUID postId
+    ) {
+        likeService.unlikePost(petId, postId);
     }
 
-    @Operation(summary = "List users who liked a post", description = "Fetches a paginated list of users who have liked a specific post.")
+    @Operation(summary = "List pets who liked a post", description = "Fetches a paginated list of pets who have liked a specific post.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved list of likes"),
             @ApiResponse(responseCode = "404", description = "Post not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))

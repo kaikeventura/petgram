@@ -6,6 +6,7 @@ import com.kaikeventura.petgram.domain.User;
 import com.kaikeventura.petgram.dto.LikeResponse;
 import com.kaikeventura.petgram.event.PostLikedEvent;
 import com.kaikeventura.petgram.repository.LikeRepository;
+import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,34 +25,49 @@ public class LikeService {
 
     private final LikeRepository likeRepository;
     private final UserRepository userRepository;
+    private final PetRepository petRepository;
     private final PostRepository postRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public void likePost(UUID postId) {
+    public void likePost(UUID petId, UUID postId) {
         var user = getCurrentUser();
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only like posts as your own pet.");
+        }
+
         var post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found."));
 
-        var likeId = new LikeId(user.getId(), postId);
+        var likeId = new LikeId(petId, postId);
 
         if (likeRepository.existsById(likeId)) {
             throw new IllegalStateException("You have already liked this post.");
         }
 
-        var like = new Like(likeId, user, post, null);
+        var like = new Like(likeId, pet, post, null);
         likeRepository.save(like);
 
         // Publish event only if the like is not from the post author
-        if (!post.getAuthor().equals(user)) {
+        if (!post.getAuthor().equals(pet)) {
             eventPublisher.publishEvent(new PostLikedEvent(this, like));
         }
     }
 
     @Transactional
-    public void unlikePost(UUID postId) {
+    public void unlikePost(UUID petId, UUID postId) {
         var user = getCurrentUser();
-        var likeId = new LikeId(user.getId(), postId);
+        var pet = petRepository.findById(petId)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found."));
+
+        if (!pet.getOwner().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only unlike posts as your own pet.");
+        }
+
+        var likeId = new LikeId(petId, postId);
 
         if (!likeRepository.existsById(likeId)) {
             throw new IllegalStateException("You have not liked this post.");
@@ -65,7 +81,7 @@ public class LikeService {
         var post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found."));
         return likeRepository.findByPost(post, pageable)
-                .map(like -> new LikeResponse(like.getUser().getId(), like.getUser().getName()));
+                .map(like -> new LikeResponse(like.getPet().getId(), like.getPet().getName()));
     }
 
     private User getCurrentUser() {

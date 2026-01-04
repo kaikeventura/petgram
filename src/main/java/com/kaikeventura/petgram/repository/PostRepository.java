@@ -1,7 +1,7 @@
 package com.kaikeventura.petgram.repository;
 
+import com.kaikeventura.petgram.domain.Pet;
 import com.kaikeventura.petgram.domain.Post;
-import com.kaikeventura.petgram.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,41 +9,38 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, UUID> {
 
     /**
-     * Fetches the news feed for a given user, based on pet friendships.
+     * Fetches the news feed for a given pet, based on pet friendships.
      * The feed includes posts from:
-     * 1. The user themselves.
-     * 2. The owners of pets that are friends with the user's own pets.
+     * 1. The pet themselves.
+     * 2. The pets that are friends with the given pet.
      */
     @Query(value = """
-        SELECT p FROM Post p WHERE p.author.id = :userId OR p.author.id IN (
-            SELECT pet.owner.id FROM Pet pet WHERE pet.id IN (
-                SELECT f.addresseePet.id FROM Friendship f
-                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.requesterPet.owner.id = :userId
-                UNION
-                SELECT f.requesterPet.id FROM Friendship f
-                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.addresseePet.owner.id = :userId
-            )
+        SELECT p FROM Post p WHERE p.author.id = :petId OR p.author.id IN (
+            SELECT f.addresseePet.id FROM Friendship f
+            WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.requesterPet.id = :petId
+            UNION
+            SELECT f.requesterPet.id FROM Friendship f
+            WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.addresseePet.id = :petId
         )
         ORDER BY p.createdAt DESC
     """,
     countQuery = """
-        SELECT count(p) FROM Post p WHERE p.author.id = :userId OR p.author.id IN (
-            SELECT pet.owner.id FROM Pet pet WHERE pet.id IN (
-                SELECT f.addresseePet.id FROM Friendship f
-                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.requesterPet.owner.id = :userId
-                UNION
-                SELECT f.requesterPet.id FROM Friendship f
-                WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.addresseePet.owner.id = :userId
-            )
+        SELECT count(p) FROM Post p WHERE p.author.id = :petId OR p.author.id IN (
+            SELECT f.addresseePet.id FROM Friendship f
+            WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.requesterPet.id = :petId
+            UNION
+            SELECT f.requesterPet.id FROM Friendship f
+            WHERE f.status = com.kaikeventura.petgram.domain.enums.FriendshipStatus.ACCEPTED AND f.addresseePet.id = :petId
         )
     """)
-    Page<Post> findNewsFeedForUser(@Param("userId") UUID userId, Pageable pageable);
+    Page<Post> findNewsFeedForPet(@Param("petId") UUID petId, Pageable pageable);
 
-    Page<Post> findByAuthorOrderByCreatedAtDesc(User author, Pageable pageable);
+    Page<Post> findByAuthorInOrderByCreatedAtDesc(List<Pet> authors, Pageable pageable);
 }
