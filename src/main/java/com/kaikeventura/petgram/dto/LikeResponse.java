@@ -10,6 +10,9 @@ public record LikeResponse(
         UUID petId,
 
         @Schema(description = "The name of the pet.")
-        String petName
+        String petName,
+
+        @Schema(description = "The avatar URL of the pet.")
+        String avatarUrl
 ) {
 }

@@ -9,6 +9,7 @@ import com.kaikeventura.petgram.repository.LikeRepository;
 import com.kaikeventura.petgram.repository.PetRepository;
 import com.kaikeventura.petgram.repository.PostRepository;
 import com.kaikeventura.petgram.repository.UserRepository;
+import com.kaikeventura.petgram.service.mappers.LikeMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,7 @@ public class LikeService {
     private final PetRepository petRepository;
     private final PostRepository postRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final LikeMapper likeMapper;
 
     @Transactional
     public void likePost(UUID petId, UUID postId) {
@@ -81,7 +83,7 @@ public class LikeService {
         var post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Post not found."));
         return likeRepository.findByPost(post, pageable)
-                .map(like -> new LikeResponse(like.getPet().getId(), like.getPet().getName()));
+                .map(likeMapper::toLikeResponse);
     }
 
     private User getCurrentUser() {
