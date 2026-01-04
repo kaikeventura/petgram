@@ -64,6 +64,30 @@ public class PetController {
         return ResponseEntity.ok(petService.findPetById(petId));
     }
 
+    @Operation(summary = "Get a pet's followers", description = "Fetches a list of pets that follow the given pet.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved followers"),
+            @ApiResponse(responseCode = "404", description = "Pet not found")
+    })
+    @GetMapping("/{petId}/followers")
+    public ResponseEntity<List<PetResponse>> getFollowers(
+            @Parameter(description = "The UUID of the pet whose followers are to be fetched.") @PathVariable UUID petId
+    ) {
+        return ResponseEntity.ok(petService.getFollowers(petId));
+    }
+
+    @Operation(summary = "Get a pet's following", description = "Fetches a list of pets that the given pet follows.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved following"),
+            @ApiResponse(responseCode = "404", description = "Pet not found")
+    })
+    @GetMapping("/{petId}/following")
+    public ResponseEntity<List<PetResponse>> getFollowing(
+            @Parameter(description = "The UUID of the pet whose following are to be fetched.") @PathVariable UUID petId
+    ) {
+        return ResponseEntity.ok(petService.getFollowing(petId));
+    }
+
     @Operation(summary = "Get a pet's posts", description = "Fetches a paginated list of posts created by a specific pet.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved posts"),

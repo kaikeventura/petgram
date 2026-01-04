@@ -29,6 +29,10 @@ public class Notification implements Serializable {
     @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_pet_id", nullable = false)
+    private Pet subjectPet;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NotificationType type;

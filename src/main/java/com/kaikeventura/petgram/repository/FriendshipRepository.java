@@ -26,4 +26,8 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Friendsh
     List<Friendship> findByAddresseePetAndStatus(Pet addresseePet, FriendshipStatus status);
 
     List<Friendship> findByRequesterPetAndStatus(Pet requesterPet, FriendshipStatus status);
+
+    long countByAddresseePetAndStatus(Pet addresseePet, FriendshipStatus status);
+
+    long countByRequesterPetAndStatus(Pet requesterPet, FriendshipStatus status);
 }

@@ -120,6 +120,26 @@ public class PetService {
     }
 
     @Transactional(readOnly = true)
+    public List<PetResponse> getFollowers(UUID petId) {
+        var pet = findPetByIdDomain(petId);
+        return friendshipRepository.findByAddresseePetAndStatus(pet, FriendshipStatus.ACCEPTED)
+                .stream()
+                .map(Friendship::getRequesterPet)
+                .map(petMapper::toPetResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PetResponse> getFollowing(UUID petId) {
+        var pet = findPetByIdDomain(petId);
+        return friendshipRepository.findByRequesterPetAndStatus(pet, FriendshipStatus.ACCEPTED)
+                .stream()
+                .map(Friendship::getAddresseePet)
+                .map(petMapper::toPetResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<PetResponse> findPetsByOwner(UUID userId) {
         var owner = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
